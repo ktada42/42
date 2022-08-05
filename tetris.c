@@ -43,60 +43,63 @@ t_shape duplicate_shape(const t_shape *shape){
     return new_shape;
 }
 
-void FunctionDS(t_shape shape){
-    int i;
-    for(i = 0; i < shape.width; i++){
+void free_shape(t_shape shape){
+    for(int i = 0; i < shape.width; i++){
 		free(shape.array[i]);
     }
     free(shape.array);
 }
 
-bool within_board(t_shape *shape){
+bool	within_board_offset(const t_shape *shape, int offset_row, int offset_col)
+{
+	if (!shape->array[offset_row][offset_col])
+		return true;
+	int	cur_row = shape->row + offset_row;
+	int	cur_col = shape->col + offset_col;
+	if((cur_col < 0 || cur_col >= BOARD_C || cur_row >= BOARD_R)){
+		return false;				
+	}
+	if(board[cur_row][cur_col])
+		return false;
+	return true;
+}
+
+bool within_board(const t_shape *shape){
 	char **array = shape->array;
-	int i, j;
-	for(i = 0; i < shape->width;i++) {
-		for(j = 0; j < shape->width ;j++){
-			if((shape->col+j < 0 || shape->col+j >= BOARD_C || shape->row+i >= BOARD_R)){
-				if(array[i][j])
-					return false;
-				
-			}
-			else if(board[shape->row+i][shape->col+j] && array[i][j])
-				return false;
+	for(int i = 0; i < shape->width;i++) {
+		for(int j = 0; j < shape->width ;j++){
+			if (!within_board_offset(shape, i, j))
+				return (false);
 		}
 	}
 	return true;
 }
 
-void FunctionRS(t_shape shape){
-	t_shape
-
- temp = duplicate_shape(&shape);
-	int i, j, k, width;
-	width = shape.width;
-	for(i = 0; i < width ; i++){
-		for(j = 0, k = width-1; j < width ; j++, k--){
-				shape.array[i][j] = temp.array[k][i];
+void rotate_shape(t_shape *shape){
+	t_shape temp = duplicate_shape(shape);
+	int width = shape->width;
+	for(int i = 0; i < width ; i++){
+		for(int j = 0, k = width-1; j < width ; j++, k--){
+			shape->array[i][j] = temp.array[k][i];
 		}
 	}
-	FunctionDS(temp);
+	free_shape(temp);
 }
 
 void display_screen(){
 	char Buffer[BOARD_R][BOARD_C] = {0};
-	int i, j;
-	for(i = 0; i < current.width ;i++){
-		for(j = 0; j < current.width ; j++){
+	for(int i = 0; i < current.width ;i++){
+		for(int j = 0; j < current.width ; j++){
 			if(current.array[i][j])
 				Buffer[current.row+i][current.col+j] = current.array[i][j];
 		}
 	}
 	clear();
-	for(i=0; i<BOARD_C-9; i++)
+	for(int i=0; i<BOARD_C-9; i++)
 		printw(" ");
 	printw("42 Tetris\n");
-	for(i = 0; i < BOARD_R ;i++){
-		for(j = 0; j < BOARD_C ; j++){
+	for(int i = 0; i < BOARD_R ;i++){
+		for(int j = 0; j < BOARD_C ; j++){
 			printw("%c ", (board[i][j] + Buffer[i][j])? '#': '.');
 		}
 		printw("\n");
@@ -150,9 +153,9 @@ void	press_key_right(t_shape *current)
 void	press_key_up(t_shape *current)
 {
 	t_shape tmp_shape = duplicate_shape(current);
-	FunctionRS(tmp_shape);
+	rotate_shape(&tmp_shape);
 	if(within_board(&tmp_shape))
-		FunctionRS(*current);
+		rotate_shape(current);
 }
 
 void	press_key_down(t_shape *current)
@@ -185,30 +188,30 @@ void	press_key_down(t_shape *current)
 	t_shape	 new_shape = duplicate_shape(&(StructsArray[rand()%7]));
 	new_shape.col = rand()%(BOARD_C-new_shape.width+1);
 	new_shape.row = 0;
-	FunctionDS(*current);
+	free_shape(*current);
 	*current = new_shape;
 	if(!within_board(current)){
 		game_on = false;
 	}
 }
 
-void recieve_pressed_key()
+void recieve_pressed_key(t_shape *current)
 {
 	const char	pressed_key = getch();
 	if (pressed_key == ERR)
 		return ;
 	switch(pressed_key){
 		case key_left:
-			press_key_left(&current);
+			press_key_left(current);
 			break;
 		case key_right:
-			press_key_right(&current);
+			press_key_right(current);
 			break;
 		case key_up:
-			press_key_up(&current);
+			press_key_up(current);
 			break;
 		case key_down:
-			press_key_down(&current);
+			press_key_down(current);
 			break;
 	}
 }
@@ -229,62 +232,16 @@ int main() {
 	}
     display_screen();
 	while(game_on){
-		recieve_pressed_key();
-		t_shape	temp = duplicate_shape(&current);	
-		FunctionDS(temp);
+		recieve_pressed_key(&current);
 		display_screen();
 		gettimeofday(&now, NULL);
 		if (hasToUpdate()) {
-			t_shape temp = duplicate_shape(&current);
-			switch('s'){
-				case 's':
-					temp.row++;
-					if(within_board(&temp))
-						current.row++;
-					else {
-						int i, j;
-						for(i = 0; i < current.width ;i++){
-							for(j = 0; j < current.width ; j++){
-								if(current.array[i][j])
-									board[current.row+i][current.col+j] = current.array[i][j];
-							}
-						}
-						int n, m, sum, count=0;
-						for(n=0;n<BOARD_R;n++){
-							sum = 0;
-							for(m=0;m< BOARD_C;m++) {
-								sum+=board[n][m];
-							}
-							if(sum==BOARD_C){
-								count++;
-								int l, k;
-								for(k = n;k >=1;k--)
-									for(l=0;l<BOARD_C;l++)
-										board[k][l]=board[k-1][l];
-								for(l=0;l<BOARD_C;l++)
-									board[k][l]=0;
-								timer-=decrease--;
-							}
-						}
-						t_shape
-					
-					 new_shape = duplicate_shape(&(StructsArray[rand()%7]));
-						new_shape.col = rand()%(BOARD_C-new_shape.width+1);
-						new_shape.row = 0;
-						FunctionDS(current);
-						current = new_shape;
-						if(!within_board(&current)){
-							game_on = false;
-						}
-					}
-					break;
-			}
-			FunctionDS(temp);
+			press_key_down(&current);
 			display_screen();
 			gettimeofday(&before_now, NULL);
 		}
 	}
-	FunctionDS(current);
+	free_shape(current);
 	endwin();
 	int i, j;
 	for(i = 0; i < BOARD_R ;i++){
