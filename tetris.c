@@ -5,26 +5,13 @@
 #include <ncurses.h>
 #include "game_timer.h"
 
-#define BOARD_R 5
-#define BOARD_C 3
-
-//char board[BOARD_R][BOARD_C] = {0};
-//int score = 0;
+#define BOARD_R 20
+#define BOARD_C 15
 
 typedef struct s_shape{
     char **array;
     int width, row, col;
 } t_shape;
-
-const t_shape StructsArray[7]= {
-	{(char *[]){(char []){0,1,1},(char []){1,1,0}, (char []){0,0,0}}, 3},
-	{(char *[]){(char []){1,1,0},(char []){0,1,1}, (char []){0,0,0}}, 3},
-	{(char *[]){(char []){0,1,0},(char []){1,1,1}, (char []){0,0,0}}, 3},
-	{(char *[]){(char []){0,0,1},(char []){1,1,1}, (char []){0,0,0}}, 3},
-	{(char *[]){(char []){1,0,0},(char []){1,1,1}, (char []){0,0,0}}, 3},
-	{(char *[]){(char []){1,1},(char []){1,1}}, 2},
-	{(char *[]){(char []){0,0,0,0}, (char []){1,1,1,1}, (char []){0,0,0,0}, (char []){0,0,0,0}}, 4}
-};
 
 t_shape duplicate_shape(const t_shape *shape){
 	t_shape new_shape = *shape;
@@ -38,6 +25,47 @@ t_shape duplicate_shape(const t_shape *shape){
 		}
     }
     return new_shape;
+}
+
+t_shape make_random_shape(){
+	const t_shape StructsArray[7]= {
+		{(char *[]){
+			(char []){0,1,1},
+			(char []){1,1,0}, 
+			(char []){0,0,0}
+		}, 3},
+		{(char *[]){
+			(char []){1,1,0},
+			(char []){0,1,1}, 
+			(char []){0,0,0}
+		}, 3},
+		{(char *[]){
+			(char []){0,1,0},
+			(char []){1,1,1}, 
+			(char []){0,0,0}
+		}, 3},
+		{(char *[]){
+			(char []){0,0,1},
+			(char []){1,1,1}, 
+			(char []){0,0,0}
+		}, 3},
+		{(char *[]){
+			(char []){1,0,0},
+			(char []){1,1,1}, 
+			(char []){0,0,0}
+		}, 3},
+		{(char *[]){
+			(char []){1,1},
+			(char []){1,1}
+		}, 2},
+		{(char *[]){
+			(char []){0,0,0,0}, 
+			(char []){1,1,1,1}, 
+			(char []){0,0,0,0}, 
+			(char []){0,0,0,0}
+		}, 4}
+	};
+	return duplicate_shape(&(StructsArray[rand()%7]));
 }
 
 void free_shape(t_shape *shape){
@@ -176,7 +204,7 @@ void	press_key_down(t_shape *current, t_game_timer *timer, char (*board)[BOARD_R
 		}
 	}
 	*score += 100*count;
-	t_shape	 new_shape = duplicate_shape(&(StructsArray[rand()%7]));
+	t_shape	 new_shape = make_random_shape();
 	new_shape.col = rand()%(BOARD_C-new_shape.width+1);
 	new_shape.row = 0;
 	free_shape(current);
@@ -233,7 +261,7 @@ void	game_start(int *score, char	(*board)[BOARD_R][BOARD_C])
 	t_game_timer	game_timer;
 	init_game_timer(&game_timer);
 	record_time(&game_timer);
-	t_shape cur_shape = duplicate_shape(&(StructsArray[rand()%7]));
+	t_shape cur_shape = make_random_shape();
     cur_shape.col = rand()%(BOARD_C-cur_shape.width+1);
     cur_shape.row = 0;
 	if(!is_within_board(&cur_shape, board)){
