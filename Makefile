@@ -1,2 +1,2 @@
 tetris: tetris.c
-	gcc tetris.c -lncurses -o tetris
+	gcc tetris.c game_timer.c -lncurses -o tetris

@@ -3,6 +3,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <ncurses.h>
+#include "game_timer.h"
 
 #define BOARD_R 20
 #define BOARD_C 15
@@ -10,8 +11,8 @@
 char board[BOARD_R][BOARD_C] = {0};
 int score = 0;
 bool game_on = true;
-suseconds_t timer = 400000;
-int decrease = 1000;
+//suseconds_t timer = 400000;
+//int decrease = 1000;
 
 typedef struct s_shape{
     char **array;
@@ -103,10 +104,10 @@ void display_screen(t_shape *current){
 	printw("\nScore: %d\n", score);
 }
 
-struct timeval before_now, now;
-int hasToUpdate(){
+//struct timeval before_now, now;
+/*int hasToUpdate(){
 	return ((suseconds_t)(now.tv_sec*1000000 + now.tv_usec) -((suseconds_t)before_now.tv_sec*1000000 + before_now.tv_usec)) > timer;
-}
+}*/
 
 void set_timeout(void) {
 	timeout(1);
@@ -128,8 +129,6 @@ enum e_input_keys
 	key_left = 'a',
 	key_right = 'd'
 };
-
-
 
 void	press_key_left(t_shape *current)
 {
@@ -154,7 +153,7 @@ void	press_key_up(t_shape *current)
 		rotate_shape(current);
 }
 
-void	press_key_down(t_shape *current)
+void	press_key_down(t_shape *current, t_game_timer *timer)
 {
 	t_shape tmp_shape = duplicate_shape(current);
 	tmp_shape.row++;
@@ -177,7 +176,7 @@ void	press_key_down(t_shape *current)
 					board[k][l]=board[k-1][l];
 			for(l=0;l<BOARD_C;l++)
 				board[0][l]=0;
-			timer-=decrease--;
+			timer->auto_down_interval-=timer->decrease_fall_interval--;
 		}
 	}
 	score += 100*count;
@@ -191,7 +190,7 @@ void	press_key_down(t_shape *current)
 	}
 }
 
-void recieve_pressed_key(t_shape *current)
+void recieve_pressed_key(t_shape *current, t_game_timer *game_timer)
 {
 	const char	pressed_key = getch();
 	if (pressed_key == ERR)
@@ -207,7 +206,7 @@ void recieve_pressed_key(t_shape *current)
 			press_key_up(current);
 			break;
 		case key_down:
-			press_key_down(current);
+			press_key_down(current, game_timer);
 			break;
 	}
 }
@@ -231,7 +230,9 @@ int main() {
     srand(time(0));
     score = 0;
     initscr();
-	gettimeofday(&before_now, NULL);
+	t_game_timer	game_timer;
+	init_game_timer(&game_timer);
+	record_time(&game_timer);
 	set_timeout();
 	t_shape cur_shape = duplicate_shape(&(StructsArray[rand()%7]));
     cur_shape.col = rand()%(BOARD_C-cur_shape.width+1);
@@ -241,13 +242,13 @@ int main() {
 	}
     display_screen(&cur_shape);
 	while(game_on){
-		recieve_pressed_key(&cur_shape);
+		recieve_pressed_key(&cur_shape, &game_timer);
 		display_screen(&cur_shape);
-		gettimeofday(&now, NULL);
-		if (hasToUpdate()) {
-			press_key_down(&cur_shape);
+		suseconds_t	erapsed_time = calc_elapsed_time_sinece_last_record(&game_timer);
+		if (erapsed_time > game_timer.auto_down_interval) {
+			press_key_down(&cur_shape, &game_timer);
 			display_screen(&cur_shape);
-			gettimeofday(&before_now, NULL);
+			record_time(&game_timer);
 		}
 	}
 	gameover(&cur_shape);
