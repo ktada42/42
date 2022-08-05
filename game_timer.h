@@ -20,7 +20,6 @@ suseconds_t	calc_elapsed_time_sinece_last_record(t_game_timer *timer);
 bool		has_to_update_by_time_elapsed(t_game_timer *timer);
 
 //cur_shape
-//timer
 //board
 //gameon
 //score
