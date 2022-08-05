@@ -10,7 +10,6 @@
 
 char board[BOARD_R][BOARD_C] = {0};
 int score = 0;
-bool game_on = true;
 //suseconds_t timer = 400000;
 //int decrease = 1000;
 
@@ -153,7 +152,7 @@ void	press_key_up(t_shape *current)
 		rotate_shape(current);
 }
 
-void	press_key_down(t_shape *current, t_game_timer *timer)
+void	press_key_down(t_shape *current, t_game_timer *timer, bool *game_on)
 {
 	t_shape tmp_shape = duplicate_shape(current);
 	tmp_shape.row++;
@@ -186,11 +185,11 @@ void	press_key_down(t_shape *current, t_game_timer *timer)
 	free_shape(current);
 	*current = new_shape;
 	if(!is_within_board(current)){
-		game_on = false;
+		*game_on = false;
 	}
 }
 
-void recieve_pressed_key(t_shape *current, t_game_timer *game_timer)
+void recieve_pressed_key(t_shape *current, t_game_timer *game_timer, bool *game_on)
 {
 	const char	pressed_key = getch();
 	if (pressed_key == ERR)
@@ -206,7 +205,7 @@ void recieve_pressed_key(t_shape *current, t_game_timer *game_timer)
 			press_key_up(current);
 			break;
 		case key_down:
-			press_key_down(current, game_timer);
+			press_key_down(current, game_timer, game_on);
 			break;
 	}
 }
@@ -231,6 +230,7 @@ int main() {
     score = 0;
     initscr();
 	t_game_timer	game_timer;
+	bool 			game_on = true;
 	init_game_timer(&game_timer);
 	record_time(&game_timer);
 	set_timeout();
@@ -242,11 +242,11 @@ int main() {
 	}
     display_screen(&cur_shape);
 	while(game_on){
-		recieve_pressed_key(&cur_shape, &game_timer);
+		recieve_pressed_key(&cur_shape, &game_timer, &game_on);
 		display_screen(&cur_shape);
 		suseconds_t	erapsed_time = calc_elapsed_time_sinece_last_record(&game_timer);
 		if (erapsed_time > game_timer.auto_down_interval) {
-			press_key_down(&cur_shape, &game_timer);
+			press_key_down(&cur_shape, &game_timer, &game_on);
 			display_screen(&cur_shape);
 			record_time(&game_timer);
 		}
