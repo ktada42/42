@@ -50,25 +50,23 @@ void free_shape(t_shape shape){
     free(shape.array);
 }
 
-bool	within_board_offset(const t_shape *shape, int offset_row, int offset_col)
+bool	is_overlap_offset(const t_shape *shape, int offset_row, int offset_col)
 {
-	if (!shape->array[offset_row][offset_col])
-		return true;
-	int	cur_row = shape->row + offset_row;
-	int	cur_col = shape->col + offset_col;
-	if((cur_col < 0 || cur_col >= BOARD_C || cur_row >= BOARD_R)){
-		return false;				
-	}
-	if(board[cur_row][cur_col])
+	const bool	shape_offset_blank = !shape->array[offset_row][offset_col];
+	if (shape_offset_blank)
 		return false;
-	return true;
+	const int	cur_row		= shape->row + offset_row;
+	const int	cur_col		= shape->col + offset_col;
+	const bool	overhang	= (cur_col < 0 || cur_col >= BOARD_C || cur_row < 0 || cur_row >= BOARD_R);
+	const bool	overlap		= board[cur_row][cur_col];
+	return (overhang || overlap);
 }
 
-bool within_board(const t_shape *shape){
+bool is_within_board(const t_shape *shape){
 	char **array = shape->array;
 	for(int i = 0; i < shape->width;i++) {
 		for(int j = 0; j < shape->width ;j++){
-			if (!within_board_offset(shape, i, j))
+			if (is_overlap_offset(shape, i, j))
 				return (false);
 		}
 	}
@@ -139,14 +137,14 @@ void	press_key_left(t_shape *current)
 {
 	t_shape tmp_shape = duplicate_shape(current);
 	tmp_shape.col--;
-	if(within_board(&tmp_shape))
+	if(is_within_board(&tmp_shape))
 		current->col--;
 }
 void	press_key_right(t_shape *current)
 {
 	t_shape tmp_shape = duplicate_shape(current);
 	tmp_shape.col++;
-	if(within_board(&tmp_shape))
+	if(is_within_board(&tmp_shape))
 		current->col++;
 }
 
@@ -154,7 +152,7 @@ void	press_key_up(t_shape *current)
 {
 	t_shape tmp_shape = duplicate_shape(current);
 	rotate_shape(&tmp_shape);
-	if(within_board(&tmp_shape))
+	if(is_within_board(&tmp_shape))
 		rotate_shape(current);
 }
 
@@ -162,7 +160,7 @@ void	press_key_down(t_shape *current)
 {
 	t_shape tmp_shape = duplicate_shape(current);
 	tmp_shape.row++;
-	if(within_board(&tmp_shape)){
+	if(is_within_board(&tmp_shape)){
 		current->row++;
 		return;
 	}
@@ -190,7 +188,7 @@ void	press_key_down(t_shape *current)
 	new_shape.row = 0;
 	free_shape(*current);
 	*current = new_shape;
-	if(!within_board(current)){
+	if(!is_within_board(current)){
 		game_on = false;
 	}
 }
@@ -227,7 +225,7 @@ int main() {
     new_shape.col = rand()%(BOARD_C-new_shape.width+1);
     new_shape.row = 0;
 	current = new_shape;
-	if(!within_board(&current)){
+	if(!is_within_board(&current)){
 		game_on = false;
 	}
     display_screen();
