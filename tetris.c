@@ -8,7 +8,7 @@
 #define BOARD_C 15
 
 char board[BOARD_R][BOARD_C] = {0};
-int final = 0;
+int score = 0;
 bool game_on = true;
 suseconds_t timer = 400000;
 int decrease = 1000;
@@ -17,7 +17,6 @@ typedef struct s_shape{
     char **array;
     int width, row, col;
 } t_shape;
-t_shape current;
 
 const t_shape StructsArray[7]= {
 	{(char *[]){(char []){0,1,1},(char []){1,1,0}, (char []){0,0,0}}, 3},
@@ -43,11 +42,11 @@ t_shape duplicate_shape(const t_shape *shape){
     return new_shape;
 }
 
-void free_shape(t_shape shape){
-    for(int i = 0; i < shape.width; i++){
-		free(shape.array[i]);
+void free_shape(t_shape *shape){
+    for(int i = 0; i < shape->width; i++){
+		free(shape->array[i]);
     }
-    free(shape.array);
+    free(shape->array);
 }
 
 bool	is_overlap_offset(const t_shape *shape, int offset_row, int offset_col)
@@ -80,15 +79,15 @@ void rotate_shape(t_shape *shape){
 			shape->array[i][j] = temp.array[k][i];
 		}
 	}
-	free_shape(temp);
+	free_shape(&temp);
 }
 
-void display_screen(){
+void display_screen(t_shape *current){
 	char Buffer[BOARD_R][BOARD_C] = {0};
-	for(int i = 0; i < current.width ;i++){
-		for(int j = 0; j < current.width ; j++){
-			if(current.array[i][j])
-				Buffer[current.row+i][current.col+j] = current.array[i][j];
+	for(int i = 0; i < current->width ;i++){
+		for(int j = 0; j < current->width ; j++){
+			if(current->array[i][j])
+				Buffer[current->row+i][current->col+j] = current->array[i][j];
 		}
 	}
 	clear();
@@ -101,7 +100,7 @@ void display_screen(){
 		}
 		printw("\n");
 	}
-	printw("\nScore: %d\n", final);
+	printw("\nScore: %d\n", score);
 }
 
 struct timeval before_now, now;
@@ -181,11 +180,11 @@ void	press_key_down(t_shape *current)
 			timer-=decrease--;
 		}
 	}
-	final += 100*count;
+	score += 100*count;
 	t_shape	 new_shape = duplicate_shape(&(StructsArray[rand()%7]));
 	new_shape.col = rand()%(BOARD_C-new_shape.width+1);
 	new_shape.row = 0;
-	free_shape(*current);
+	free_shape(current);
 	*current = new_shape;
 	if(!is_within_board(current)){
 		game_on = false;
@@ -213,9 +212,9 @@ void recieve_pressed_key(t_shape *current)
 	}
 }
 
-void gameover()
+void gameover(t_shape *cur_shape)
 {
-	free_shape(current);
+	free_shape(cur_shape);
 	endwin();
 	int i, j;
 	for(i = 0; i < BOARD_R ;i++){
@@ -225,33 +224,32 @@ void gameover()
 		printf("\n");
 	}
 	printf("\nGame over!\n");
-	printf("\nScore: %d\n", final);
+	printf("\nScore: %d\n", score);
 }
 
 int main() {
     srand(time(0));
-    final = 0;
+    score = 0;
     initscr();
 	gettimeofday(&before_now, NULL);
 	set_timeout();
-	t_shape new_shape = duplicate_shape(&(StructsArray[rand()%7]));
-    new_shape.col = rand()%(BOARD_C-new_shape.width+1);
-    new_shape.row = 0;
-	current = new_shape;
-	if(!is_within_board(&current)){
+	t_shape cur_shape = duplicate_shape(&(StructsArray[rand()%7]));
+    cur_shape.col = rand()%(BOARD_C-cur_shape.width+1);
+    cur_shape.row = 0;
+	if(!is_within_board(&cur_shape)){
 		game_on = false;
 	}
-    display_screen();
+    display_screen(&cur_shape);
 	while(game_on){
-		recieve_pressed_key(&current);
-		display_screen();
+		recieve_pressed_key(&cur_shape);
+		display_screen(&cur_shape);
 		gettimeofday(&now, NULL);
 		if (hasToUpdate()) {
-			press_key_down(&current);
-			display_screen();
+			press_key_down(&cur_shape);
+			display_screen(&cur_shape);
 			gettimeofday(&before_now, NULL);
 		}
 	}
-	gameover();
+	gameover(&cur_shape);
     return 0;
 }
