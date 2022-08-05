@@ -1,4 +1,4 @@
 tetris: tetris.c
-	gcc tetris.c game_timer.c -lncurses -o tetris
+	gcc tetris.c game_timer.c -lncurses -g -o tetris
 clean:
 	rm tetris

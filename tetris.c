@@ -5,8 +5,8 @@
 #include <ncurses.h>
 #include "game_timer.h"
 
-#define BOARD_R 20
-#define BOARD_C 15
+#define BOARD_R 5
+#define BOARD_C 3
 
 //char board[BOARD_R][BOARD_C] = {0};
 //int score = 0;
@@ -106,9 +106,6 @@ void display_screen(t_shape *current, char (*board)[BOARD_R][BOARD_C], int score
 	return ((suseconds_t)(now.tv_sec*1000000 + now.tv_usec) -((suseconds_t)before_now.tv_sec*1000000 + before_now.tv_usec)) > timer;
 }*/
 
-void set_timeout(void) {
-	timeout(1);
-}
 
 void add_to_the_board(t_shape *shape, char (*board)[BOARD_R][BOARD_C])
 {
@@ -156,8 +153,10 @@ void	press_key_down(t_shape *current, t_game_timer *timer, char (*board)[BOARD_R
 	tmp_shape.row++;
 	if(is_within_board(&tmp_shape, board)){
 		current->row++;
+		free_shape(&tmp_shape);
 		return;
 	}
+	free_shape(&tmp_shape);
 	add_to_the_board(current, board);
 	int sum, count=0;
 	for(int i=0;i<BOARD_R;i++){
@@ -222,22 +221,27 @@ void game_end(int	score, const char	(*board)[BOARD_R][BOARD_C])
 	printf("\nScore: %d\n", score);
 }
 
+void	init_system(){
+	srand(time(0));
+	initscr();
+	timeout(1);
+}
+
 void	game_start(int *score, char	(*board)[BOARD_R][BOARD_C])
 {
-    srand(time(0));
+    init_system();
 	t_game_timer	game_timer;
 	init_game_timer(&game_timer);
-	initscr();
-	set_timeout();
 	record_time(&game_timer);
-	bool	game_on = true;
 	t_shape cur_shape = duplicate_shape(&(StructsArray[rand()%7]));
     cur_shape.col = rand()%(BOARD_C-cur_shape.width+1);
     cur_shape.row = 0;
 	if(!is_within_board(&cur_shape, board)){
-		game_on = false;
+		free_shape(&cur_shape);
+		return;
 	}
 	display_screen(&cur_shape, board, *score);
+	bool	game_on = true;
 	while(game_on){
 		recieve_pressed_key(&cur_shape, &game_timer, board, score, &game_on);
 		display_screen(&cur_shape, board, *score);
@@ -252,9 +256,10 @@ void	game_start(int *score, char	(*board)[BOARD_R][BOARD_C])
 }
 
 int main() {
-	int				score	= 0;
-	char			board[BOARD_R][BOARD_C] = {0};
+	int		score					= 0;
+	char	board[BOARD_R][BOARD_C] = {0};
 	game_start(&score, &board);
 	game_end(score, &board);
+	system("leaks tetris");
     return 0;
 }
