@@ -63,11 +63,10 @@ bool	is_overlap_offset(const t_shape *shape, int offset_row, int offset_col)
 }
 
 bool is_within_board(const t_shape *shape){
-	char **array = shape->array;
 	for(int i = 0; i < shape->width;i++) {
 		for(int j = 0; j < shape->width ;j++){
 			if (is_overlap_offset(shape, i, j))
-				return (false);
+				return false;
 		}
 	}
 	return true;
@@ -165,16 +164,16 @@ void	press_key_down(t_shape *current)
 		return;
 	}
 	add_to_the_board(current);
-	int n, m, sum, count=0;
-	for(n=0;n<BOARD_R;n++){
+	int sum, count=0;
+	for(int i=0;i<BOARD_R;i++){
 		sum = 0;
-		for(m=0;m< BOARD_C;m++) {
-			sum+=board[n][m];
+		for(int j=0;j< BOARD_C;j++) {
+			sum+=board[i][j];
 		}
 		if(sum==BOARD_C){
 			count++;
 			int l, k;
-			for(k = n;k >=1;k--)
+			for(k = i;k >=1;k--)
 				for(l=0;l<BOARD_C;l++)
 					board[k][l]=board[k-1][l];
 			for(l=0;l<BOARD_C;l++)
@@ -214,6 +213,20 @@ void recieve_pressed_key(t_shape *current)
 	}
 }
 
+void gameover()
+{
+	free_shape(current);
+	endwin();
+	int i, j;
+	for(i = 0; i < BOARD_R ;i++){
+		for(j = 0; j < BOARD_C ; j++){
+			printf("%c ", board[i][j] ? '#': '.');
+		}
+		printf("\n");
+	}
+	printf("\nGame over!\n");
+	printf("\nScore: %d\n", final);
+}
 
 int main() {
     srand(time(0));
@@ -239,16 +252,6 @@ int main() {
 			gettimeofday(&before_now, NULL);
 		}
 	}
-	free_shape(current);
-	endwin();
-	int i, j;
-	for(i = 0; i < BOARD_R ;i++){
-		for(j = 0; j < BOARD_C ; j++){
-			printf("%c ", board[i][j] ? '#': '.');
-		}
-		printf("\n");
-	}
-	printf("\nGame over!\n");
-	printf("\nScore: %d\n", final);
+	gameover();
     return 0;
 }
