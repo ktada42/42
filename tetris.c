@@ -5,8 +5,8 @@
 #include <ncurses.h>
 #include "game_timer.h"
 
-#define BOARD_R 	20
-#define BOARD_C 	15
+#define BOARD_R 	5
+#define BOARD_C 	20
 #define TIMEOUT_MS	1
 
 typedef struct s_piece{
