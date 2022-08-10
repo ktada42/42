@@ -9,27 +9,27 @@
 #define BOARD_C 	15
 #define TIMEOUT_MS	1
 
-typedef struct s_shape{
+typedef struct s_piece{
     char **array;
     int width, row, col;
-} t_shape;
+} t_piece;
 
-t_shape duplicate_shape(const t_shape *shape){
-	t_shape new_shape = *shape;
-	char **copyshape = shape->array;
-	new_shape.array = (char**)malloc(new_shape.width*sizeof(char*));
+t_piece duplicate_piece(const t_piece *piece){
+	t_piece new_piece = *piece;
+	char **copypiece = piece->array;
+	new_piece.array = (char**)malloc(new_piece.width*sizeof(char*));
     int i, j;
-    for(i = 0; i < new_shape.width; i++){
-		new_shape.array[i] = (char*)malloc(new_shape.width*sizeof(char));
-		for(j=0; j < new_shape.width; j++) {
-			new_shape.array[i][j] = copyshape[i][j];
+    for(i = 0; i < new_piece.width; i++){
+		new_piece.array[i] = (char*)malloc(new_piece.width*sizeof(char));
+		for(j=0; j < new_piece.width; j++) {
+			new_piece.array[i][j] = copypiece[i][j];
 		}
     }
-    return new_shape;
+    return new_piece;
 }
 
-t_shape make_random_shape(){
-	const t_shape StructsArray[7]= {
+t_piece make_random_piece(){
+	const t_piece StructsArray[7]= {
 		{(char *[]){
 			(char []){0,1,1},
 			(char []){1,1,0}, 
@@ -66,53 +66,71 @@ t_shape make_random_shape(){
 			(char []){0,0,0,0}
 		}, 4}
 	};
-	t_shape shape = duplicate_shape(&(StructsArray[rand() % 7]));
-	shape.col = rand()%(BOARD_C - shape.width + 1);
-	shape.row = 0;
-	return shape;
+	t_piece piece = duplicate_piece(&(StructsArray[rand() % 7]));
+	piece.col = rand()%(BOARD_C - piece.width + 1);
+	piece.row = 0;
+	return piece;
 }
 
-void free_shape(t_shape *shape){
-    for(int i = 0; i < shape->width; i++){
-		free(shape->array[i]);
+void free_piece(t_piece *piece){
+    for(int i = 0; i < piece->width; i++){
+		free(piece->array[i]);
     }
-    free(shape->array);
+    free(piece->array);
 }
 
-bool	is_valid_pos_offset(const t_shape *shape, char (*board)[BOARD_R][BOARD_C], int offset_row, int offset_col)
+bool	is_valid_pos_offset(const t_piece *piece, char (*board)[BOARD_R][BOARD_C], int offset_row, int offset_col)
 {
-	const bool	offset_pos_is_blank = !shape->array[offset_row][offset_col];
+	const bool	offset_pos_is_blank = !piece->array[offset_row][offset_col];
 	if (offset_pos_is_blank)
 		return true;
-	const int	cur_row		= shape->row + offset_row;
-	const int	cur_col		= shape->col + offset_col;
+	const int	cur_row		= piece->row + offset_row;
+	const int	cur_col		= piece->col + offset_col;
 	const bool	overhang	= (cur_col < 0 || cur_col >= BOARD_C || cur_row < 0 || cur_row >= BOARD_R);
 	const bool	overlap		= (*board)[cur_row][cur_col];
 	return (!overhang && !overlap);
 }
 
-bool is_valid_pos(const t_shape *shape, char (*board)[BOARD_R][BOARD_C]){
-	for(int i = 0; i < shape->width;i++) {
-		for(int j = 0; j < shape->width ;j++){
-			if (!is_valid_pos_offset(shape, board, i, j))
+bool is_valid_piece(const t_piece *piece, char (*board)[BOARD_R][BOARD_C]){
+	for(int i = 0; i < piece->width;i++) {
+		for(int j = 0; j < piece->width ;j++){
+			if (!is_valid_pos_offset(piece, board, i, j))
 				return false;
 		}
 	}
 	return true;
 }
 
-void rotate_shape(t_shape *shape){
-	t_shape temp = duplicate_shape(shape);
-	int width = shape->width;
+void rotate_piece(t_piece *piece){
+	t_piece temp = duplicate_piece(piece);
+	int width = piece->width;
 	for(int i = 0; i < width ; i++){
 		for(int j = 0, k = width-1; j < width ; j++, k--){
-			shape->array[i][j] = temp.array[k][i];
+			piece->array[i][j] = temp.array[k][i];
 		}
 	}
-	free_shape(&temp);
+	free_piece(&temp);
 }
 
-void display_screen(t_shape *current, char (*board)[BOARD_R][BOARD_C], int score){
+void	print_board(t_piece *current, const char (*board)[BOARD_R][BOARD_C]){
+	char piece_of_board[BOARD_R][BOARD_C] = {0};
+	if (current){
+	for(int i = 0; i < current->width ;i++){
+		for(int j = 0; j < current->width ; j++){
+			if(current->array[i][j])
+				piece_of_board[current->row+i][current->col+j] = current->array[i][j];
+		}
+	}
+	}
+	for(int i = 0; i < BOARD_R ;i++){
+		for(int j = 0; j < BOARD_C ; j++){
+			printw("%c ", piece_of_board[i][j] || (*board)[i][j] ? '#': '.');
+		}
+		printw("\n");
+	}
+}
+
+void display_screen(t_piece *current, char (*board)[BOARD_R][BOARD_C], int score){
 	char Buffer[BOARD_R][BOARD_C] = {0};
 	for(int i = 0; i < current->width ;i++){
 		for(int j = 0; j < current->width ; j++){
@@ -124,20 +142,21 @@ void display_screen(t_shape *current, char (*board)[BOARD_R][BOARD_C], int score
 	for(int i=0; i<BOARD_C-9; i++)
 		printw(" ");
 	printw("42 Tetris\n");
-	for(int i = 0; i < BOARD_R ;i++){
+	print_board(current, board);
+	/*for(int i = 0; i < BOARD_R ;i++){
 		for(int j = 0; j < BOARD_C ; j++){
 			printw("%c ", ((*board)[i][j] + Buffer[i][j])? '#': '.');
 		}
 		printw("\n");
-	}
+	}*/
 	printw("\nScore: %d\n", score);
 }
 
-void add_to_the_board(t_shape *shape, char (*board)[BOARD_R][BOARD_C])
+void add_to_the_board(t_piece *piece, char (*board)[BOARD_R][BOARD_C])
 {
-	for(int i = 0; i < shape->width; i++){
-		for(int j = 0; j < shape->width; j++){
-			(*board)[shape->row + i][shape->col + j] |= shape->array[i][j];
+	for(int i = 0; i < piece->width; i++){
+		for(int j = 0; j < piece->width; j++){
+			(*board)[piece->row + i][piece->col + j] |= piece->array[i][j];
 		}
 	}
 }
@@ -150,46 +169,46 @@ enum e_input_keys
 	key_right = 'd'
 };
 
-void	press_key_left(t_shape *current, char (*board)[BOARD_R][BOARD_C], int *score)
+void	move_key_left(t_piece *current, char (*board)[BOARD_R][BOARD_C], int *score)
 {
-	t_shape tmp_shape = duplicate_shape(current);
-	tmp_shape.col--;
-	if(is_valid_pos(&tmp_shape, board))
+	t_piece tmp_piece = duplicate_piece(current);
+	tmp_piece.col--;
+	if(is_valid_piece(&tmp_piece, board))
 		current->col--;
 	display_screen(current, board, *score);	
 }
 
-void	press_key_right(t_shape *current, char (*board)[BOARD_R][BOARD_C], int *score)
+void	move_piece_right(t_piece *current, char (*board)[BOARD_R][BOARD_C], int *score)
 {
-	t_shape tmp_shape = duplicate_shape(current);
-	tmp_shape.col++;
-	if(is_valid_pos(&tmp_shape, board))
+	t_piece tmp_piece = duplicate_piece(current);
+	tmp_piece.col++;
+	if(is_valid_piece(&tmp_piece, board))
 		current->col++;
 	display_screen(current, board, *score);	
 }
 
-void	press_key_up(t_shape *current, char (*board)[BOARD_R][BOARD_C], int *score)
+void	move_piece_up(t_piece *current, char (*board)[BOARD_R][BOARD_C], int *score)
 {
-	t_shape tmp_shape = duplicate_shape(current);
-	rotate_shape(&tmp_shape);
-	if(is_valid_pos(&tmp_shape, board))
-		rotate_shape(current);
+	t_piece tmp_piece = duplicate_piece(current);
+	rotate_piece(&tmp_piece);
+	if(is_valid_piece(&tmp_piece, board))
+		rotate_piece(current);
 	display_screen(current, board, *score);	
 }
 
-void	press_key_down(t_shape *current, t_game_timer *timer, char (*board)[BOARD_R][BOARD_C], int *score, bool *game_on)
+void	move_piece_down(t_piece *current, t_game_timer *timer, char (*board)[BOARD_R][BOARD_C], int *score, bool *game_on)
 {
-	t_shape tmp_shape = duplicate_shape(current);
-	tmp_shape.row++;
-	if(is_valid_pos(&tmp_shape, board)){
+	t_piece tmp_piece = duplicate_piece(current);
+	tmp_piece.row++;
+	if(is_valid_piece(&tmp_piece, board)){
 		current->row++;
-		free_shape(&tmp_shape);
+		free_piece(&tmp_piece);
 		display_screen(current, board, *score);
 		return;
 	}
-	free_shape(&tmp_shape);
+	free_piece(&tmp_piece);
 	add_to_the_board(current, board);
-	free_shape(current);
+	free_piece(current);
 	int sum, count=0;
 	for(int i=0;i<BOARD_R;i++){
 		sum = 0;
@@ -208,76 +227,84 @@ void	press_key_down(t_shape *current, t_game_timer *timer, char (*board)[BOARD_R
 		}
 	}
 	*score += 100*count;
-	t_shape	 new_shape = make_random_shape();
-	*current = new_shape;
-	if(!is_valid_pos(current, board)){
+	t_piece	 new_piece = make_random_piece();
+	*current = new_piece;
+	if(!is_valid_piece(current, board)){
 		*game_on = false;
 	}
 	display_screen(current, board, *score);
 }
 
-void recieve_pressed_key(t_shape *current, t_game_timer *game_timer, char (*board)[BOARD_R][BOARD_C], int *score, bool *game_on)
+bool is_valid_key()
 {
 	const char	pressed_key = getch();
-	if (pressed_key == ERR)
-		return ;
+	return (pressed_key == key_left ||
+			pressed_key == key_right||
+			pressed_key == key_up	||
+			pressed_key == key_down);
+}
+
+void recieve_key_and_do_operation(t_piece *current, t_game_timer *game_timer, char (*board)[BOARD_R][BOARD_C], int *score, bool *game_on)
+{
+	char	pressed_key;
+
+	pressed_key = getch();
 	switch(pressed_key){
 		case key_left:
-			press_key_left(current, board, score);
+			move_key_left(current, board, score);
 			break;
 		case key_right:
-			press_key_right(current, board, score);
+			move_piece_right(current, board, score);
 			break;
 		case key_up:
-			press_key_up(current, board, score);
+			move_piece_up(current, board, score);
 			break;
 		case key_down:
-			press_key_down(current, game_timer, board, score, game_on);
+			move_piece_down(current, game_timer, board, score, game_on);
 			break;
 	}
 }
 
 void print_result(int	score, const char	(*board)[BOARD_R][BOARD_C])
 {
-	for(int i = 0; i < BOARD_R ;i++){
-		for(int j = 0; j < BOARD_C ; j++){
-			printf("%c ", (*board)[i][j] ? '#': '.');
-		}
-		printf("\n");
-	}
+	print_board(NULL, board);
 	printf("\nGame over!\n");
 	printf("\nScore: %d\n", score);
 }
 
-void	init_game(t_game_timer *game_timer){
+void	init_game(t_game_timer *game_timer, t_piece *cur_piece, bool *game_on){
 	srand(time(0));
 	initscr();
 	timeout(TIMEOUT_MS);
 	init_game_timer(game_timer);
+	*cur_piece = make_random_piece();
+	*game_on = true;
+}
+
+void	finish_game_start(t_piece *cur_piece)
+{
+	free_piece(cur_piece);
+	endwin();
 }
 
 void	game_start(int *score, char	(*board)[BOARD_R][BOARD_C])
 {
 	t_game_timer	game_timer;
-	init_game(&game_timer);
+	t_piece			cur_piece;
+	bool			game_on;
+
+	init_game(&game_timer, &cur_piece, &game_on);
+	display_screen(&cur_piece, board, *score);
 	record_time(&game_timer);
-	t_shape cur_shape = make_random_shape();
-	if(!is_valid_pos(&cur_shape, board)){
-		free_shape(&cur_shape);
-		return;
-	}
-	display_screen(&cur_shape, board, *score);
-	bool	game_on = true;
 	while(game_on){
-		recieve_pressed_key(&cur_shape, &game_timer, board, score, &game_on);
+		recieve_key_and_do_operation(&cur_piece, &game_timer, board, score, &game_on);
 		suseconds_t	erapsed_time = calc_elapsed_time_sinece_last_record(&game_timer);
 		if (erapsed_time > game_timer.auto_down_interval) {
-			press_key_down(&cur_shape, &game_timer, board, score, &game_on);
+			move_piece_down(&cur_piece, &game_timer, board, score, &game_on);
 			record_time(&game_timer);
 		}
 	}
-	free_shape(&cur_shape);
-	endwin();
+	finish_game_start(&cur_piece);
 }
 
 int main() {
@@ -285,6 +312,6 @@ int main() {
 	char	board[BOARD_R][BOARD_C] = {0};
 	game_start(&score, &board);
 	print_result(score, &board);
-	system("leaks tetris");
+	//system("leaks tetris");
     return 0;
 }

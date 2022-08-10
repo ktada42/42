@@ -3,7 +3,6 @@
 void	init_game_timer(t_game_timer *timer){
 	timer->auto_down_interval 			= INITIAL_FALL_INTERVAL;
 	timer->decrease_fall_interval	= INITIAL_DECREASE_FALL_INTERVAL;
-	gettimeofday(&(timer->last_recorded_time), NULL);
 }
 
 void	record_time(t_game_timer *timer){
